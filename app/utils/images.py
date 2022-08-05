@@ -341,7 +341,13 @@ def render_animation(
             continue
 
         stream = io.BytesIO()
-        frame.save(stream, format="GIF")
+        try:
+            frame.save(stream, format="GIF")
+        except AttributeError as e:
+            # Handle potential Pillow 9.0 bug:
+            # AttributeError: 'NoneType' object has no attribute 'quantize'
+            logger.critical(f"Frame {index} unreadable: {e}")
+            return frames, duration
         background = Image.open(stream).convert("RGBA")
         image = resize_image(background, *size, pad, expand=False)
         percent_rendered = 1.0 if total == 1 else index / total
